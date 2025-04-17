@@ -11,7 +11,7 @@ from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
 from telegram.helpers import escape_markdown
 from typing import Optional, List, Tuple
 
-from config import logger, GAME_TIMEOUT_SECONDS
+from config import logger, GAME_TIMEOUT_SECONDS, THEMES, DEFAULT_THEME_KEY
 from game_state import games, banned_users, chat_stats
 from game_logic import get_symbol_emoji, get_keyboard, check_winner
 
@@ -57,6 +57,8 @@ async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Инициализация новой игры
     first_player = random.choice(["X", "O"])
     second_player = "O" if first_player == "X" else "X"
+    chosen_key = context.user_data.get('chosen_theme', DEFAULT_THEME_KEY)
+    theme_emojis = THEMES.get(chosen_key, THEMES[DEFAULT_THEME_KEY])
     game_data = {
         "board": list(range(1, 10)),
         "current_player": first_player,
@@ -66,12 +68,12 @@ async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "usernames": {user_id: username},
         "message_id": None,
         "timeout_job": None,
-        "theme_emojis": context.user_data.get('chosen_theme', None)
+        "theme_emojis": theme_emojis
     }
     games[chat_id] = game_data
 
     # Отправка начального сообщения
-    first_emoji = get_symbol_emoji(first_player, game_data.get('theme_emojis', {}))
+    first_emoji = get_symbol_emoji(first_player, game_data['theme_emojis'])
     sent_message = await message.reply_text(
         f"🎲 *Новая игра началась!* 🎲\n\n"
         f"👤 {escape_markdown(username, version=1)} играет за {first_emoji}\n"
