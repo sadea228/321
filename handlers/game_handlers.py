@@ -143,6 +143,28 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         board = game_data['board']
         if isinstance(board[cell], int):
             symbol = game_data['current_player']
+            user_id = update.effective_user.id
+            # Логика регистрации второго игрока
+            if game_data['players'][symbol] is None:
+                other_symbol = 'O' if symbol == 'X' else 'X'
+                # Запрещаем одному пользователю играть за обе стороны
+                if game_data['players'][other_symbol] == user_id:
+                    await query.answer("Вы уже играете за другую сторону", show_alert=True)
+                    return
+                # Регистрация второго игрока и отмена таймаута ожидания второго игрока
+                game_data['players'][symbol] = user_id
+                game_data['user_symbols'][user_id] = symbol
+                if game_data.get('timeout_job'):
+                    try:
+                        game_data['timeout_job'].schedule_removal()
+                        logger.info(f"Second player joined for chat {chat_id}, canceled timeout")
+                    except Exception as e:
+                        logger.warning(f"Could not cancel timeout job for chat {chat_id}: {e}")
+                    game_data['timeout_job'] = None
+            elif game_data['players'][symbol] != user_id:
+                await query.answer("Сейчас не ваш ход", show_alert=True)
+                return
+            # Выполняем ход
             board[cell] = symbol
             winner, combo = check_winner(board)
             if winner:
