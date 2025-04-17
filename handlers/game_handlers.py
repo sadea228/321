@@ -154,6 +154,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 # Регистрация второго игрока и отмена таймаута ожидания второго игрока
                 game_data['players'][symbol] = user_id
                 game_data['user_symbols'][user_id] = symbol
+                # Сохраняем имя второго игрока
+                username = update.effective_user.username or f"player_{user_id}"
+                game_data['usernames'][user_id] = username
                 if game_data.get('timeout_job'):
                     try:
                         game_data['timeout_job'].schedule_removal()
@@ -181,10 +184,12 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                     winner_id = game_data['players'][winner]
                     winner_name = game_data['usernames'].get(winner_id, str(winner_id))
                     stats["top_players"][winner_name] = stats["top_players"].get(winner_name, 0) + 1
-                # Отправляем сообщение о результате
-                keyboard = get_keyboard(chat_id, combo)
-                text = f"🏆 Победитель: {winner}!"
-                await query.edit_message_text(text, reply_markup=keyboard)
+                    # Подготовка текста с именем и эмодзи победителя
+                    theme_emojis = game_data['theme_emojis']
+                    winner_emoji = get_symbol_emoji(f"{winner}_win", theme_emojis)
+                    text = f"🏆 Победитель: {escape_markdown(winner_name, version=1)} {winner_emoji}! Поздравляем!"
+                    keyboard = get_keyboard(chat_id, combo)
+                    await query.edit_message_text(text, reply_markup=keyboard, parse_mode="Markdown")
             else:
                 game_data['current_player'] = 'O' if symbol == 'X' else 'X'
                 # Отображаем ход с учётом игроков и темы
