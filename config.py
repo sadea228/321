@@ -35,6 +35,22 @@ THEMES = {
         EMPTY_CELL_SYMBOL: "▫️",
         "X_win": "🌟🍕🌟",
         "O_win": "🌟🍔🌟"
+    },
+    "space": {
+        "name": "Космос",
+        "X": "🚀",
+        "O": "🛸",
+        EMPTY_CELL_SYMBOL: "🌑",
+        "X_win": "🌟🚀🌟",
+        "O_win": "🌟🛸🌟"
+    },
+    "sports": {
+        "name": "Спорт",
+        "X": "🎾",
+        "O": "⚽",
+        EMPTY_CELL_SYMBOL: "🏟️",
+        "X_win": "🏆🎾🏆",
+        "O_win": "🏆⚽🏆"
     }
     # Добавьте сюда другие темы при желании
 }
