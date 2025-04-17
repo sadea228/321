@@ -177,6 +177,11 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 stats["games"] += 1
                 if winner == "Ничья":
                     stats["draws"] += 1
+                    # Отображаем сообщение о ничье с финальным полем
+                    theme_emojis = game_data['theme_emojis']
+                    text = "🤝 Ничья!"
+                    keyboard = get_keyboard(chat_id)
+                    await query.edit_message_text(text, reply_markup=keyboard, parse_mode="Markdown")
                 else:
                     stats["wins"] += 1
                     # Ваш победитель
