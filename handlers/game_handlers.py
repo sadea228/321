@@ -187,11 +187,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 await query.edit_message_text(text, reply_markup=keyboard)
             else:
                 game_data['current_player'] = 'O' if symbol == 'X' else 'X'
-                # Передача хода
-                await query.edit_message_text(
-                    f"🎲 Ходит {game_data['current_player']}",
-                    reply_markup=get_keyboard(chat_id)
-                )
+                # Отображаем ход с учётом игроков и темы
+                await _restore_game_message(query, context, chat_id, theme_changed=False)
         return
 
 async def game_timeout(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -209,6 +206,32 @@ async def game_timeout(context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             game_data['game_over'] = True
             game_data['timeout_job'] = None
+
+async def _restore_game_message(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_TYPE, chat_id: int, theme_changed: bool) -> None:
+    """Восстанавливает сообщение об игре при смене темы или ходе."""
+    game_data = games[chat_id]
+    # Информация об игроках
+    x_id = game_data['players'].get('X')
+    o_id = game_data['players'].get('O')
+    x_name = game_data['usernames'].get(x_id, '—') if x_id else '—'
+    o_name = game_data['usernames'].get(o_id, '—') if o_id else '—'
+    emojis = game_data['theme_emojis']
+    x_emoji = get_symbol_emoji('X', emojis)
+    o_emoji = get_symbol_emoji('O', emojis)
+    current = game_data['current_player']
+    current_emoji = get_symbol_emoji(current, emojis)
+    title = "🎨 Тема изменена! 🎨\n\n" if theme_changed else ""
+    text = (
+        f"{title}🎲 *Игра в процессе!* 🎲\n\n"
+        f"👤 {escape_markdown(x_name, version=1)} играет за {x_emoji}\n"
+        f"👤 {escape_markdown(o_name, version=1)} играет за {o_emoji}\n\n"
+        f"*Сейчас ходит*: {current_emoji}"
+    )
+    await query.edit_message_text(
+        text,
+        reply_markup=get_keyboard(chat_id),
+        parse_mode="Markdown"
+    )
 
 # Handler objects
 start_handler = CommandHandler("start", start)
