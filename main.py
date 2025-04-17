@@ -30,7 +30,6 @@ async def main() -> None:
     app.add_handler(game_handlers.start_handler)
     app.add_handler(game_handlers.new_game_handler)
     app.add_handler(game_handlers.button_click_handler)
-    app.add_handler(game_handlers.timeout_handler)
     app.add_handler(theme_handlers.themes_handler)
     app.add_handler(theme_handlers.select_theme_handler)
     app.add_handler(theme_handlers.change_theme_prompt_handler)
