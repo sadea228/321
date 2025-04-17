@@ -1,0 +1,192 @@
+# handlers/game_handlers.py
+"""
+Handlers for game commands and callbacks.
+"""
+import random
+import asyncio
+from datetime import timedelta
+import telegram
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
+from telegram.helpers import escape_markdown
+from typing import Optional, List, Tuple
+
+from config import logger, GAME_TIMEOUT_SECONDS
+from game_state import games, banned_users, chat_stats
+from game_logic import get_symbol_emoji, get_keyboard, check_winner
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработчик команды /start"""
+    await update.message.reply_text(
+        "Али чемпион! 🎲 Для начала игры используйте команду /newgame\n"
+        "🎨 Сменить символы игры: /themes"
+    )
+
+async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработчик команды /newgame - создаёт новую игру"""
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    username = update.effective_user.username or f"player_{user_id}"
+    message = update.effective_message or update.message
+    
+    # Блокировка забаненных пользователей
+    if str(user_id) in banned_users or update.effective_user.username in banned_users:
+        await message.reply_text("⛔ Вы забанены и не можете начинать игры.")
+        return
+
+    # Проверка на активную игру
+    if chat_id in games and not games[chat_id].get('game_over', True):
+        await message.reply_text(
+            "⏳ В этом чате уже идет игра! Дождитесь ее завершения или отмены.",
+            reply_to_message_id=games[chat_id].get('message_id')
+        )
+        logger.warning(f"Пытались начать игру в чате {chat_id}, где уже есть активная игра.")
+        return
+
+    # Отмена старого таймера и удаление старой игры
+    if chat_id in games:
+        old_job = games[chat_id].get('timeout_job')
+        if old_job:
+            try:
+                old_job.schedule_removal()
+                logger.info(f"Removed previous timeout job for chat {chat_id}.")
+            except Exception as e:
+                logger.warning(f"Could not remove timeout job for chat {chat_id}: {e}")
+        del games[chat_id]
+
+    # Инициализация новой игры
+    first_player = random.choice(["X", "O"])
+    second_player = "O" if first_player == "X" else "X"
+    game_data = {
+        "board": list(range(1, 10)),
+        "current_player": first_player,
+        "game_over": False,
+        "players": {first_player: user_id, second_player: None},
+        "user_symbols": {user_id: first_player},
+        "usernames": {user_id: username},
+        "message_id": None,
+        "timeout_job": None,
+        "theme_emojis": context.user_data.get('chosen_theme', None)
+    }
+    games[chat_id] = game_data
+
+    # Отправка начального сообщения
+    first_emoji = get_symbol_emoji(first_player, game_data.get('theme_emojis', {}))
+    sent_message = await message.reply_text(
+        f"🎲 *Новая игра началась!* 🎲\n\n"
+        f"👤 {escape_markdown(username, version=1)} играет за {first_emoji}\n"
+        f"⏳ Ожидаем второго игрока...\n\n"
+        f"*Первым ходит*: {first_emoji}\n\n"
+        f"⏱️ *Время на игру*: {GAME_TIMEOUT_SECONDS} секунд",
+        reply_markup=get_keyboard(chat_id),
+        parse_mode="Markdown"
+    )
+    game_data['message_id'] = sent_message.message_id
+
+    # Планируем таймаут ожидания второго игрока
+    job_context = {'chat_id': chat_id, 'message_id': sent_message.message_id}
+    timeout_job = context.job_queue.run_once(
+        game_timeout,
+        when=timedelta(seconds=GAME_TIMEOUT_SECONDS),
+        data=job_context,
+        name=f"game_timeout_{chat_id}"
+    )
+    game_data['timeout_job'] = timeout_job
+
+async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработчик нажатия на кнопки игрового поля или управления игрой."""
+    query = update.callback_query
+    user = update.effective_user
+    chat_id = update.effective_chat.id
+    data = query.data
+
+    # Блокировка забаненных пользователей
+    if str(user.id) in banned_users or user.username in banned_users:
+        await query.answer("⛔ Вы забанены и не можете играть.", show_alert=True)
+        return
+
+    # Ответ на callback
+    try:
+        await query.answer()
+    except telegram.error.BadRequest:
+        pass
+
+    # Проверка наличия игры
+    if chat_id not in games:
+        await query.answer("Игра не найдена.", show_alert=True)
+        return
+
+    game_data = games[chat_id]
+    message_id = query.message.message_id if query.message else None
+    # Проверка на актуальность сообщения
+    if message_id and message_id != game_data.get('message_id'):
+        await query.answer("Старая игра. Начните новую.", show_alert=True)
+        try:
+            await context.bot.edit_message_reply_markup(chat_id, message_id, reply_markup=None)
+        except Exception:
+            pass
+        return
+
+    # Обработка noop и new_game и ходов
+    if data == 'noop':
+        return
+    if data == 'new_game':
+        from handlers.game_handlers import new_game as ng
+        fake_update = Update(update.update_id, message=query.message)
+        await ng(fake_update, context)
+        return
+    if data.isdigit():
+        cell = int(data)
+        # логика присоединения и хода, проверка победы
+        board = game_data['board']
+        if isinstance(board[cell], int):
+            symbol = game_data['current_player']
+            board[cell] = symbol
+            winner, combo = check_winner(board)
+            if winner:
+                # Завершаем игру и подсчитываем метрики
+                game_data['game_over'] = True
+                # Обновляем статистику чата
+                stats = chat_stats.setdefault(chat_id, {"games": 0, "wins": 0, "draws": 0, "top_players": {}})
+                stats["games"] += 1
+                if winner == "Ничья":
+                    stats["draws"] += 1
+                else:
+                    stats["wins"] += 1
+                    # Ваш победитель
+                    winner_id = game_data['players'][winner]
+                    winner_name = game_data['usernames'].get(winner_id, str(winner_id))
+                    stats["top_players"][winner_name] = stats["top_players"].get(winner_name, 0) + 1
+                # Отправляем сообщение о результате
+                keyboard = get_keyboard(chat_id, combo)
+                text = f"🏆 Победитель: {winner}!"
+                await query.edit_message_text(text, reply_markup=keyboard)
+            else:
+                game_data['current_player'] = 'O' if symbol == 'X' else 'X'
+                # Передача хода
+                await query.edit_message_text(
+                    f"🎲 Ходит {game_data['current_player']}",
+                    reply_markup=get_keyboard(chat_id)
+                )
+        return
+
+async def game_timeout(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработчик таймаута ожидания второго игрока."""
+    job = context.job.data
+    chat_id = job['chat_id']
+    if chat_id in games:
+        game_data = games[chat_id]
+        if not game_data.get('game_over') and not game_data['players'].get('O' if game_data['current_player']=='X' else 'X'):
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=job['message_id'],
+                text="⌛ Время вышло! Игра отменена.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Новая игра", callback_data="new_game")]])
+            )
+            game_data['game_over'] = True
+            game_data['timeout_job'] = None
+
+# Handler objects
+start_handler = CommandHandler("start", start)
+new_game_handler = CommandHandler("newgame", new_game)
+button_click_handler = CallbackQueryHandler(button_click, pattern=r"^(noop|[0-8]|new_game)$") 
