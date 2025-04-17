@@ -133,9 +133,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if data == 'noop':
         return
     if data == 'new_game':
-        from handlers.game_handlers import new_game as ng
-        fake_update = Update(update.update_id, message=query.message)
-        await ng(fake_update, context)
+        # При нажатии "Новая игра" запускаем новую игру от имени пользователя
+        await new_game(update, context)
         return
     if data.isdigit():
         cell = int(data)
