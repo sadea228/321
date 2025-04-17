@@ -24,10 +24,15 @@ async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_user.username != 'sadea12':
         await update.message.reply_text('⛔ Только владелец может использовать эту команду.')
         return
-    if not context.args:
-        await update.message.reply_text('Использование: /ban <@username или user_id>')
+    # Поддержка бана по ответу на сообщение
+    if update.message.reply_to_message:
+        user_to_ban = update.message.reply_to_message.from_user
+        target = str(user_to_ban.id)
+    elif context.args:
+        target = context.args[0].lstrip('@')
+    else:
+        await update.message.reply_text('Использование: /ban <@username или user_id> или ответ на сообщение пользователя')
         return
-    target = context.args[0].lstrip('@')
     banned_users.add(target)
     await update.message.reply_text(f'Пользователь {target} забанен.')
     logger.info(f'User {target} banned')
@@ -36,10 +41,15 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     if update.effective_user.username != 'sadea12':
         await update.message.reply_text('⛔ Только владелец может использовать эту команду.')
         return
-    if not context.args:
-        await update.message.reply_text('Использование: /unban <@username или user_id>')
+    # Поддержка разбанивания по ответу на сообщение
+    if update.message.reply_to_message:
+        user_to_unban = update.message.reply_to_message.from_user
+        target = str(user_to_unban.id)
+    elif context.args:
+        target = context.args[0].lstrip('@')
+    else:
+        await update.message.reply_text('Использование: /unban <@username или user_id> или ответ на сообщение пользователя')
         return
-    target = context.args[0].lstrip('@')
     if target in banned_users:
         banned_users.remove(target)
         await update.message.reply_text(f'Пользователь {target} разбанен.')
