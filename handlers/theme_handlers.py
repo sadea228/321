@@ -112,7 +112,7 @@ async def cancel_theme_change_callback(update: Update, context: ContextTypes.DEF
 
 # Handler objects
 themes_handler = CommandHandler("themes", themes_command)
-select_theme_handler = CallbackQueryHandler(select_theme_callback, pattern=r"^theme_select_")
+select_theme_handler = CallbackQueryHandler(select_theme_callback, pattern=r"^theme_select_(?!ingame_).*")
 change_theme_prompt_handler = CallbackQueryHandler(change_theme_prompt_callback, pattern=r"^change_theme_prompt$")
 select_theme_ingame_handler = CallbackQueryHandler(select_theme_ingame_callback, pattern=r"^theme_select_ingame_")
 cancel_theme_change_handler = CallbackQueryHandler(cancel_theme_change_callback, pattern=r"^cancel_theme_change$") 
