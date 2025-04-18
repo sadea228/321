@@ -45,6 +45,8 @@ def get_keyboard(chat_id: int, winning_indices: Optional[List[int]] = None) -> O
     board = game_data["board"]
     is_game_over = game_data["game_over"]
     theme_emojis = game_data.get("theme_emojis", THEMES[DEFAULT_THEME_KEY])
+    # Индекс последнего хода
+    last_move = game_data.get("last_move", None)
     keyboard = []
     logger.debug(f"[get_keyboard chat={chat_id}] Board: {board}, Theme: {theme_emojis.get('name', 'Unknown')}, Winning: {winning_indices}")
 
@@ -67,6 +69,10 @@ def get_keyboard(chat_id: int, winning_indices: Optional[List[int]] = None) -> O
                     cell_text = get_symbol_emoji(win_symbol_key, theme_emojis)
                 else:
                     cell_text = get_symbol_emoji(cell, theme_emojis)
+
+            # Подсветка последнего хода
+            if last_move == cell_index:
+                cell_text = f"🟩{cell_text}🟩"
 
             logger.debug(f"[get_keyboard chat={chat_id}] Cell[{cell_index}]: {repr(cell)} -> Emoji: {repr(cell_text)}, Callback: {callback_data}")
             row.append(InlineKeyboardButton(cell_text, callback_data=callback_data))

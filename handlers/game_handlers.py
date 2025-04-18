@@ -168,6 +168,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 return
             # Выполняем ход
             board[cell] = symbol
+            # Сохраняем индекс последнего хода для подсветки
+            game_data['last_move'] = cell
             winner, combo = check_winner(board)
             if winner:
                 # Завершаем игру и подсчитываем метрики
