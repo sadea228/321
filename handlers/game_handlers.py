@@ -239,8 +239,8 @@ async def _restore_game_message(query: telegram.CallbackQuery, context: ContextT
     text = (
         f"{title}<b>🔄 ИГРА В ПРОЦЕССЕ</b> 🔄\n"
         "────────────────\n"
-        f"👤 X: <i>{escape_markdown(x_name, version=1)}</i> за {x_emoji}\n"
-        f"👤 O: <i>{escape_markdown(o_name, version=1)}</i> за {o_emoji}\n"
+        f"👤 {x_emoji}: <i>{escape_markdown(x_name, version=1)}</i>\n"
+        f"👤 {o_emoji}: <i>{escape_markdown(o_name, version=1)}</i>\n"
         "────────────────\n"
         f"➡️ <b>Ходит: {current_emoji}</b>"
     )
