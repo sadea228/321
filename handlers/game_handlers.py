@@ -18,8 +18,10 @@ from game_logic import get_symbol_emoji, get_keyboard, check_winner
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /start"""
     await update.message.reply_text(
-        "Али чемпион! 🎲 Для начала игры используйте команду /newgame\n"
-        "🎨 Сменить символы игры: /themes"
+        "🎉 <b>Добро пожаловать в CrackNolikBot!</b> 🎉\n\n"
+        "🔹 /newgame — начать новую игру\n"
+        "🔹 /themes — выбрать тему\n",
+        parse_mode="HTML"
     )
 
 async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -75,13 +77,15 @@ async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Отправка начального сообщения
     first_emoji = get_symbol_emoji(first_player, game_data['theme_emojis'])
     sent_message = await message.reply_text(
-        f"🎲 *Новая игра началась!* 🎲\n\n"
-        f"👤 {escape_markdown(username, version=1)} играет за {first_emoji}\n"
-        f"⏳ Ожидаем второго игрока...\n\n"
-        f"*Первым ходит*: {first_emoji}\n\n"
-        f"⏱️ *Время на игру*: {GAME_TIMEOUT_SECONDS} секунд",
+        "<b>🕹️ НОВАЯ ИГРА НАЧАЛАСЬ! 🕹️</b>\n"
+        "───────────────\n"
+        f"👤 Игрок: <i>{escape_markdown(username, version=1)}</i>\n"
+        f"🎭 Символ: {first_emoji}\n"
+        f"⏱️ Таймаут на ход: {GAME_TIMEOUT_SECONDS} сек\n"
+        "───────────────\n"
+        "<i>Ждём второго игрока...</i>",
         reply_markup=get_keyboard(chat_id),
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     game_data['message_id'] = sent_message.message_id
 
@@ -233,15 +237,17 @@ async def _restore_game_message(query: telegram.CallbackQuery, context: ContextT
     current_emoji = get_symbol_emoji(current, emojis)
     title = "🎨 Тема изменена! 🎨\n\n" if theme_changed else ""
     text = (
-        f"{title}🎲 *Игра в процессе!* 🎲\n\n"
-        f"👤 {escape_markdown(x_name, version=1)} играет за {x_emoji}\n"
-        f"👤 {escape_markdown(o_name, version=1)} играет за {o_emoji}\n\n"
-        f"*Сейчас ходит*: {current_emoji}"
+        f"{title}<b>🔄 ИГРА В ПРОЦЕССЕ</b> 🔄\n"
+        "────────────────\n"
+        f"👤 X: <i>{escape_markdown(x_name, version=1)}</i> за {x_emoji}\n"
+        f"👤 O: <i>{escape_markdown(o_name, version=1)}</i> за {o_emoji}\n"
+        "────────────────\n"
+        f"➡️ <b>Ходит: {current_emoji}</b>"
     )
     await query.edit_message_text(
         text,
         reply_markup=get_keyboard(chat_id),
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
 
 # Handler objects
