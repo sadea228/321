@@ -171,10 +171,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             elif game_data['players'][symbol] != user_id:
                 await query.answer("Сейчас не ваш ход", show_alert=True)
                 return
-            # Анимация хода: показываем анимированные эмодзи
+            # Анимация хода: показываем два кадра, обрабатываем фул контрол
             keyboard = get_keyboard(chat_id)
             row, col = divmod(cell, 3)
-            frames = ["⏳", "⌛️", "⏳"]
+            frames = ["⏳", "⌛️"]
             for frame in frames:
                 animated_keyboard = []
                 for r_i, row_buttons in enumerate(keyboard.inline_keyboard):
@@ -185,8 +185,13 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                         else:
                             new_row.append(btn)
                     animated_keyboard.append(new_row)
-                await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
-                await asyncio.sleep(0.2)
+                try:
+                    await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
+                except telegram.error.RetryAfter as e:
+                    await asyncio.sleep(e.retry_after)
+                except Exception:
+                    pass
+                await asyncio.sleep(0.1)
             # Устанавливаем символ в ячейку после анимации
             board[cell] = symbol
             # Сохраняем индекс последнего хода для подсветки

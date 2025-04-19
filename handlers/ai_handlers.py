@@ -79,10 +79,10 @@ async def ai_move(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_T
     move = best_move(board, ai_symbol, human_symbol)
     if move is None:
         return
-    # Анимация хода ИИ: показываем анимированные эмодзи
+    # Анимация хода ИИ: два кадра с обработкой флад контроля
     keyboard = get_keyboard(chat_id)
     row, col = divmod(move, 3)
-    frames = ["⏳", "⌛️", "⏳"]
+    frames = ["⏳", "⌛️"]
     for frame in frames:
         animated_keyboard = []
         for r_i, row_buttons in enumerate(keyboard.inline_keyboard):
@@ -93,8 +93,13 @@ async def ai_move(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_T
                 else:
                     new_row.append(btn)
             animated_keyboard.append(new_row)
-        await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
-        await asyncio.sleep(0.2)
+        try:
+            await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
+        except telegram.error.RetryAfter as e:
+            await asyncio.sleep(e.retry_after)
+        except Exception:
+            pass
+        await asyncio.sleep(0.1)
     # Устанавливаем символ в ячейку после анимации
     board[move] = ai_symbol
     # Сохраняем индекс последнего хода для подсветки
