@@ -3,7 +3,7 @@
 """
 import asyncio
 import telegram
-from telegram import Update, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes, CommandHandler
 from telegram.helpers import escape_markdown
 
@@ -79,8 +79,23 @@ async def ai_move(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_T
     move = best_move(board, ai_symbol, human_symbol)
     if move is None:
         return
-    # Анимация хода ИИ
-    await asyncio.sleep(0.5)
+    # Анимация хода ИИ: показываем анимированные эмодзи
+    keyboard = get_keyboard(chat_id)
+    row, col = divmod(move, 3)
+    frames = ["⏳", "⌛️", "⏳"]
+    for frame in frames:
+        animated_keyboard = []
+        for r_i, row_buttons in enumerate(keyboard.inline_keyboard):
+            new_row = []
+            for c_i, btn in enumerate(row_buttons):
+                if r_i == row and c_i == col:
+                    new_row.append(InlineKeyboardButton(frame, callback_data="noop"))
+                else:
+                    new_row.append(btn)
+            animated_keyboard.append(new_row)
+        await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
+        await asyncio.sleep(0.2)
+    # Устанавливаем символ в ячейку после анимации
     board[move] = ai_symbol
     # Сохраняем индекс последнего хода для подсветки
     game_data['last_move'] = move
