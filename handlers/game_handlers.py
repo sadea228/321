@@ -171,21 +171,23 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             elif game_data['players'][symbol] != user_id:
                 await query.answer("Сейчас не ваш ход", show_alert=True)
                 return
-            # Анимация хода: показываем placeholder
+            # Анимация хода: показываем анимированные эмодзи
             keyboard = get_keyboard(chat_id)
             row, col = divmod(cell, 3)
-            new_keyboard = []
-            for r_i, row_buttons in enumerate(keyboard.inline_keyboard):
-                new_row = []
-                for c_i, btn in enumerate(row_buttons):
-                    if r_i == row and c_i == col:
-                        new_row.append(InlineKeyboardButton("…", callback_data="noop"))
-                    else:
-                        new_row.append(btn)
-                new_keyboard.append(new_row)
-            await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
-            await asyncio.sleep(0.5)
-            # Устанавливаем символ в ячейку
+            frames = ["⏳", "⌛️", "⏳"]
+            for frame in frames:
+                animated_keyboard = []
+                for r_i, row_buttons in enumerate(keyboard.inline_keyboard):
+                    new_row = []
+                    for c_i, btn in enumerate(row_buttons):
+                        if r_i == row and c_i == col:
+                            new_row.append(InlineKeyboardButton(frame, callback_data="noop"))
+                        else:
+                            new_row.append(btn)
+                    animated_keyboard.append(new_row)
+                await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
+                await asyncio.sleep(0.2)
+            # Устанавливаем символ в ячейку после анимации
             board[cell] = symbol
             # Сохраняем индекс последнего хода для подсветки
             game_data['last_move'] = cell
