@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, Response
 from http import HTTPStatus
 
 from telegram import Update, BotCommand
-from telegram.ext import Application, JobQueue
+from telegram.ext import Application, JobQueue, ContextTypes
 
 from config import TOKEN, WEBHOOK_ENDPOINT_URL, WEBHOOK_PATH, PORT, logger
 import handlers.game_handlers as game_handlers
@@ -62,6 +62,16 @@ async def main() -> None:
         async def webhook(request: Request):
             return await handle_telegram_update(request, app)
         fastapi_app.add_api_route(WEBHOOK_PATH, webhook, methods=["POST"])
+
+    # Глобальный обработчик ошибок для логирования и уведомления пользователя
+    async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        logger.exception("Произошла ошибка при обработке обновления", exc_info=context.error)
+        if isinstance(update, Update) and update.effective_message:
+            try:
+                await update.effective_message.reply_text("❗️ Произошла внутренняя ошибка. Пожалуйста, попробуйте позже.")
+            except Exception:
+                pass
+    app.add_error_handler(error_handler)
 
     # Запуск сервера
     config = uvicorn.Config(app=fastapi_app, host="0.0.0.0", port=PORT)
