@@ -68,6 +68,8 @@ async def play_ai(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def ai_move(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_TYPE, chat_id: int) -> None:
     """Выполняет ход ИИ и обновляет сообщение"""
+    # Задержка перед ходом ИИ для эффекта мышления
+    await asyncio.sleep(0.5)
     game_data = games[chat_id]
     board = game_data['board']
     ai_symbol = game_data['ai_symbol']
