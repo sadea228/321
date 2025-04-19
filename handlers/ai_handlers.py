@@ -11,7 +11,6 @@ from config import THEMES, DEFAULT_THEME_KEY
 from game_state import games, chat_stats
 from game_logic import get_symbol_emoji, get_keyboard, check_winner
 from game_ai import best_move
-from handlers.game_handlers import _restore_game_message
 
 async def play_ai(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Начать игру пользователя против ИИ"""
@@ -109,6 +108,8 @@ async def ai_move(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_T
     else:
         # Переключаем ход на пользователя и обновляем сообщение
         game_data['current_player'] = human_symbol
+        # Локальный импорт, чтобы избежать кругового импорта
+        from handlers.game_handlers import _restore_game_message
         await _restore_game_message(query, context, chat_id, theme_changed=False)
 
 # Создаем handler для команды /play_ai
