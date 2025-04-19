@@ -10,6 +10,7 @@ from config import TOKEN, WEBHOOK_ENDPOINT_URL, WEBHOOK_PATH, PORT, logger
 import handlers.game_handlers as game_handlers
 import handlers.theme_handlers as theme_handlers
 import handlers.admin_handlers as admin_handlers
+import handlers.ai_handlers as ai_handlers
 
 fastapi_app = FastAPI()
 
@@ -39,11 +40,13 @@ async def main() -> None:
     app.add_handler(admin_handlers.ban_user_handler)
     app.add_handler(admin_handlers.unban_user_handler)
     app.add_handler(admin_handlers.chat_stats_handler)
+    app.add_handler(ai_handlers.play_ai_handler)
 
     # Регистрируем команды
     commands = [
         BotCommand("start", "👋 Запустить бота"),
         BotCommand("newgame", "🎲 Начать новую игру"),
+        BotCommand("play_ai", "🤖 Играть против ИИ"),
         BotCommand("themes", "🎨 Выбрать тему"),
         BotCommand("resetgame", "♻️ Сбросить игру"),
         BotCommand("ban", "🚫 Бан пользователя"),

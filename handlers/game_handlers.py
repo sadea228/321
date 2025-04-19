@@ -14,6 +14,7 @@ from typing import Optional, List, Tuple
 from config import logger, GAME_TIMEOUT_SECONDS, THEMES, DEFAULT_THEME_KEY
 from game_state import games, banned_users, chat_stats
 from game_logic import get_symbol_emoji, get_keyboard, check_winner
+from handlers.ai_handlers import ai_move
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /start"""
@@ -216,8 +217,11 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                     await query.edit_message_text(text, reply_markup=keyboard, parse_mode="Markdown")
             else:
                 game_data['current_player'] = 'O' if symbol == 'X' else 'X'
-                # Отображаем ход с учётом игроков и темы
-                await _restore_game_message(query, context, chat_id, theme_changed=False)
+                # Если игра против ИИ, выполняем ход ИИ, иначе обновляем сообщение
+                if game_data.get('vs_ai'):
+                    await ai_move(query, context, chat_id)
+                else:
+                    await _restore_game_message(query, context, chat_id, theme_changed=False)
         return
 
 async def game_timeout(context: ContextTypes.DEFAULT_TYPE) -> None:
