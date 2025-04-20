@@ -10,7 +10,9 @@ from config import TOKEN, WEBHOOK_ENDPOINT_URL, WEBHOOK_PATH, PORT, logger
 import handlers.game_handlers as game_handlers
 import handlers.theme_handlers as theme_handlers
 import handlers.admin_handlers as admin_handlers
+import handlers.admin_panel_handlers as admin_panel_handlers
 import handlers.ai_handlers as ai_handlers
+import handlers.vip_handlers as vip_handlers
 
 fastapi_app = FastAPI()
 
@@ -41,6 +43,13 @@ async def main() -> None:
     app.add_handler(admin_handlers.unban_user_handler)
     app.add_handler(admin_handlers.chat_stats_handler)
     app.add_handler(ai_handlers.play_ai_handler)
+    app.add_handler(vip_handlers.vip_handler)
+    app.add_handler(vip_handlers.setavatar_handler)
+    app.add_handler(vip_handlers.signature_handler)
+    app.add_handler(vip_handlers.setvip_handler)
+    app.add_handler(admin_panel_handlers.admin_panel_handler)
+    app.add_handler(admin_panel_handlers.admin_callback_handler)
+    app.add_handler(admin_panel_handlers.broadcast_handler)
 
     # Регистрируем команды
     commands = [
@@ -51,7 +60,12 @@ async def main() -> None:
         BotCommand("resetgame", "♻️ Сбросить игру"),
         BotCommand("ban", "🚫 Бан пользователя"),
         BotCommand("unban", "✅ Разбан пользователя"),
-        BotCommand("chatstats", "📊 Статистика по чату")
+        BotCommand("chatstats", "📊 Статистика по чату"),
+        BotCommand("vip", "💎 Получить VIP-подписку"),
+        BotCommand("setavatar", "👤 Установить аватар VIP"),
+        BotCommand("setsignature", "✍️ Установить подпись VIP"),
+        BotCommand("setvip", "👑 Выдать VIP-подписку"),
+        BotCommand("admin", "👑 Открыть админ‑панель"),
     ]
     await app.initialize()
     await app.bot.set_my_commands(commands)

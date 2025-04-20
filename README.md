@@ -17,9 +17,8 @@
 ## Установка и запуск
 
 1. Установите необходимые библиотеки:
-```
-pip install python-telegram-bot==20.*
-```
+- pip install python-telegram-bot==20.*
+- pip install aiosend>=2.1.0
 
 2. Замените `YOUR_TOKEN_HERE` в файле `bot.py` на ваш токен от @BotFather
 

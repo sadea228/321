@@ -15,9 +15,14 @@ from config import logger, GAME_TIMEOUT_SECONDS, THEMES, DEFAULT_THEME_KEY
 from game_state import games, banned_users, chat_stats
 from game_logic import get_symbol_emoji, get_keyboard, check_winner
 from handlers.ai_handlers import ai_move
+from vip import get_avatar, get_signature
+from bot_state import add_chat
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /start"""
+    # Регистрируем чат для админ-рассылок
+    chat_id = update.effective_chat.id
+    add_chat(chat_id)
     await update.message.reply_text(
         "🎉 <b>Добро пожаловать в CrackNolikBot!</b> 🎉\n\n"
         "🔹 /newgame — начать новую игру\n"
@@ -28,6 +33,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /newgame - создаёт новую игру"""
     chat_id = update.effective_chat.id
+    # Регистрируем чат для админ-рассылок
+    add_chat(chat_id)
     user_id = update.effective_user.id
     username = update.effective_user.username or f"player_{user_id}"
     message = update.effective_message or update.message
@@ -76,11 +83,15 @@ async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     games[chat_id] = game_data
 
     # Отправка начального сообщения
+    avatar = get_avatar(user_id)
+    signature = get_signature(user_id)
+    signature_block = f"{signature}\n" if signature else ""
     first_emoji = get_symbol_emoji(first_player, game_data['theme_emojis'])
     sent_message = await message.reply_text(
         "<b>🕹️ НОВАЯ ИГРА НАЧАЛАСЬ! 🕹️</b>\n"
+        f"{signature_block}"
         "───────────────\n"
-        f"👤 Игрок: <i>{escape_markdown(username, version=1)}</i>\n"
+        f"👤 Игрок: {avatar} <i>{escape_markdown(username, version=1)}</i>\n"
         f"🎭 Символ: {first_emoji}\n"
         f"⏱️ Таймаут на ход: {GAME_TIMEOUT_SECONDS} сек\n"
         "───────────────\n"
