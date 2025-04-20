@@ -15,7 +15,7 @@ from config import logger, GAME_TIMEOUT_SECONDS, THEMES, DEFAULT_THEME_KEY
 from game_state import games, banned_users, chat_stats
 from game_logic import get_symbol_emoji, get_keyboard, check_winner
 from handlers.ai_handlers import ai_move
-from vip import get_avatar, get_signature, DEFAULT_AVATAR
+from vip import get_avatar, get_signature, DEFAULT_AVATAR, get_symbol
 from bot_state import add_chat
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -68,7 +68,7 @@ async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     first_player = random.choice(["X", "O"])
     second_player = "O" if first_player == "X" else "X"
     chosen_key = context.user_data.get('chosen_theme', DEFAULT_THEME_KEY)
-    theme_emojis = THEMES.get(chosen_key, THEMES[DEFAULT_THEME_KEY])
+    theme_emojis = THEMES.get(chosen_key, THEMES[DEFAULT_THEME_KEY]).copy()
     game_data = {
         "board": list(range(1, 10)),
         "current_player": first_player,
@@ -80,6 +80,11 @@ async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "timeout_job": None,
         "theme_emojis": theme_emojis
     }
+    # Override symbols for VIP users if they have custom symbol
+    for uid, sym in game_data['user_symbols'].items():
+        custom = get_symbol(uid)
+        if custom:
+            theme_emojis[sym] = custom
     games[chat_id] = game_data
 
     # Отправка начального сообщения
@@ -169,6 +174,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 # Регистрация второго игрока и отмена таймаута ожидания второго игрока
                 game_data['players'][symbol] = user_id
                 game_data['user_symbols'][user_id] = symbol
+                # Override custom symbol for VIP second player
+                custom = get_symbol(user_id)
+                if custom:
+                    game_data['theme_emojis'][symbol] = custom
                 # Сохраняем имя второго игрока
                 username = update.effective_user.username or f"player_{user_id}"
                 game_data['usernames'][user_id] = username

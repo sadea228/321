@@ -9,6 +9,7 @@ from telegram.helpers import escape_markdown
 
 from config import THEMES, DEFAULT_THEME_KEY
 from game_state import games
+from vip import get_symbol
 
 async def themes_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /themes - показывает доступные темы."""
@@ -91,7 +92,15 @@ async def select_theme_ingame_callback(update: Update, context: ContextTypes.DEF
         await query.answer("Некорректная тема или игра не найдена.", show_alert=True)
         return
 
-    games[chat_id]['theme_emojis'] = THEMES[theme_key]
+    # Применяем выбранную тему
+    games[chat_id]['theme_emojis'] = THEMES[theme_key].copy()
+    # Override custom symbols for VIP users
+    game_data = games[chat_id]
+    for uid, sym in game_data.get('user_symbols', {}).items():
+        custom = get_symbol(uid)
+        if custom:
+            game_data['theme_emojis'][sym] = custom
+
     context.user_data['chosen_theme'] = theme_key
     from handlers.game_handlers import _restore_game_message
     await query.answer(f"Тема '{THEMES[theme_key]['name']}' применена!")

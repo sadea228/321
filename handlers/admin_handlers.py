@@ -7,11 +7,12 @@ from telegram.ext import ContextTypes, CommandHandler
 
 from config import logger
 from game_state import games, banned_users, chat_stats
-from vip import is_vip_by_username, VIP_ICON
+from vip import is_vip_by_username, VIP_ICON, is_vip
 
 async def reset_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.effective_user.username != 'sadea12':
-        await update.message.reply_text('⛔ Только владелец может использовать эту команду.')
+    user_id = update.effective_user.id
+    if update.effective_user.username != 'sadea12' and not is_vip(user_id):
+        await update.message.reply_text('⛔ Только владелец или VIP могут использовать эту команду.')
         return
     chat_id = update.effective_chat.id
     if chat_id in games:
@@ -22,8 +23,9 @@ async def reset_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await update.message.reply_text('В этом чате нет активной игры.')
 
 async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.effective_user.username != 'sadea12':
-        await update.message.reply_text('⛔ Только владелец может использовать эту команду.')
+    user_id = update.effective_user.id
+    if update.effective_user.username != 'sadea12' and not is_vip(user_id):
+        await update.message.reply_text('⛔ Только владелец или VIP могут использовать эту команду.')
         return
     # Поддержка бана по ответу на сообщение
     if update.message.reply_to_message:
@@ -39,8 +41,9 @@ async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.info(f'User {target} banned')
 
 async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.effective_user.username != 'sadea12':
-        await update.message.reply_text('⛔ Только владелец может использовать эту команду.')
+    user_id = update.effective_user.id
+    if update.effective_user.username != 'sadea12' and not is_vip(user_id):
+        await update.message.reply_text('⛔ Только владелец или VIP могут использовать эту команду.')
         return
     # Поддержка разбанивания по ответу на сообщение
     if update.message.reply_to_message:
@@ -81,6 +84,7 @@ async def chat_stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 # Handler objects
 reset_game_handler = CommandHandler('resetgame', reset_game)
+reset_handler = CommandHandler('reset', reset_game)
 ban_user_handler = CommandHandler('ban', ban_user)
 unban_user_handler = CommandHandler('unban', unban_user)
 chat_stats_handler = CommandHandler('chatstats', chat_stats_command) 

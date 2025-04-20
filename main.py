@@ -39,6 +39,7 @@ async def main() -> None:
     app.add_handler(theme_handlers.select_theme_ingame_handler)
     app.add_handler(theme_handlers.cancel_theme_change_handler)
     app.add_handler(admin_handlers.reset_game_handler)
+    app.add_handler(admin_handlers.reset_handler)
     app.add_handler(admin_handlers.ban_user_handler)
     app.add_handler(admin_handlers.unban_user_handler)
     app.add_handler(admin_handlers.chat_stats_handler)
@@ -47,6 +48,8 @@ async def main() -> None:
     app.add_handler(vip_handlers.setavatar_handler)
     app.add_handler(vip_handlers.signature_handler)
     app.add_handler(vip_handlers.setvip_handler)
+    app.add_handler(vip_handlers.setsymbol_handler)
+    app.add_handler(vip_handlers.viphelp_handler)
     app.add_handler(admin_panel_handlers.admin_panel_handler)
     app.add_handler(admin_panel_handlers.admin_callback_handler)
 
@@ -57,12 +60,15 @@ async def main() -> None:
         BotCommand("play_ai", "🤖 Играть против ИИ"),
         BotCommand("themes", "🎨 Выбрать тему"),
         BotCommand("resetgame", "♻️ Сбросить игру"),
+        BotCommand("reset", "♻️ Сбросить игру"),
         BotCommand("ban", "🚫 Бан пользователя"),
         BotCommand("unban", "✅ Разбан пользователя"),
         BotCommand("chatstats", "📊 Статистика по чату"),
         BotCommand("vip", "💎 Получить VIP-подписку"),
         BotCommand("setavatar", "👤 Установить аватар VIP"),
         BotCommand("setsignature", "✍️ Установить подпись VIP"),
+        BotCommand("setsymbol", "🎭 Установить символ VIP"),
+        BotCommand("viphelp", "💡 Список команд VIP"),
         BotCommand("setvip", "👑 Выдать VIP-подписку"),
         BotCommand("admin", "👑 Открыть админ‑панель"),
     ]
