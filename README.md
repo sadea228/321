@@ -22,9 +22,13 @@
 
 2. Замените `YOUR_TOKEN_HERE` в файле `bot.py` на ваш токен от @BotFather
 
-3. Запустите бота:
+3. Установите переменные окружения:
+  - `TOKEN`: токен вашего бота от @BotFather
+  - `CRYPTO_TOKEN`: токен для CryptoPay (aiosend)
+
+4. Запустите бота:
 ```
-python bot.py
+python main.py
 ```
 
 ## Как играть

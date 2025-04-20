@@ -12,7 +12,7 @@ from config import logger
 # Инициализация CryptoPay
 CRYPTO_TOKEN = os.getenv("CRYPTO_TOKEN")
 if not CRYPTO_TOKEN:
-    logger.error("Необходимо установить переменную окружения CRYPTO_TOKEN для CryptoPay!")
+    raise RuntimeError("Необходимо установить переменную окружения CRYPTO_TOKEN для CryptoPay!")
 cp = CryptoPay(CRYPTO_TOKEN)
 
 async def vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -7,6 +7,7 @@ from telegram.ext import ContextTypes, CommandHandler
 
 from config import logger
 from game_state import games, banned_users, chat_stats
+from vip import is_vip_by_username, VIP_ICON
 
 async def reset_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.effective_user.username != 'sadea12':
@@ -74,7 +75,8 @@ async def chat_stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if top:
         text.append('Топ по победам:')
         for user, count in sorted(top.items(), key=lambda x: -x[1]):
-            text.append(f"- {user}: {count}")
+            vip_marker = VIP_ICON if is_vip_by_username(user) else ""
+            text.append(f"- {user}{vip_marker}: {count}")
     await update.message.reply_text("\n".join(text))
 
 # Handler objects
