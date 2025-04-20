@@ -49,7 +49,6 @@ async def main() -> None:
     app.add_handler(vip_handlers.setvip_handler)
     app.add_handler(admin_panel_handlers.admin_panel_handler)
     app.add_handler(admin_panel_handlers.admin_callback_handler)
-    app.add_handler(admin_panel_handlers.broadcast_handler)
 
     # Регистрируем команды
     commands = [
