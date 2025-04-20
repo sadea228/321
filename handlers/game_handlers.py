@@ -262,38 +262,29 @@ async def game_timeout(context: ContextTypes.DEFAULT_TYPE) -> None:
 async def _restore_game_message(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_TYPE, chat_id: int, theme_changed: bool) -> None:
     """Восстанавливает сообщение об игре при смене темы или ходе."""
     game_data = games[chat_id]
-    # Формируем список игроков с их VIP-аватарами
-    players = game_data['players']
     emojis = game_data['theme_emojis']
-    lines = []
-    for symbol, uid in players.items():
-        avatar = get_avatar(uid) if uid else DEFAULT_AVATAR
-        name = game_data['usernames'].get(uid, '—') if uid else '—'
-        sym_emoji = get_symbol_emoji(symbol, emojis)
+    title = "🎨 Тема изменена! 🎨\n\n" if theme_changed else ""
+    # Динамическое отображение игроков с VIP-аватарами в порядке подключения
+    lines: List[str] = []
+    for uid, sym in game_data['user_symbols'].items():
+        avatar = get_avatar(uid)
+        name = game_data['usernames'].get(uid, str(uid))
+        sym_emoji = get_symbol_emoji(sym, emojis)
         lines.append(f"👤 {avatar} {sym_emoji}: <i>{escape_markdown(name, version=1)}</i>")
     current = game_data['current_player']
     current_emoji = get_symbol_emoji(current, emojis)
-    title = "🎨 Тема изменена! 🎨\n\n" if theme_changed else ""
     text = (
         f"{title}<b>🔄 ИГРА В ПРОЦЕССЕ</b> 🔄\n"
         "────────────────\n"
-        f"{"\n".join(lines)}\n"
+        + "\n".join(lines) + "\n"
         "────────────────\n"
         f"➡️ <b>Ходит: {current_emoji}</b>"
     )
     try:
-        await query.edit_message_text(
-            text,
-            reply_markup=get_keyboard(chat_id),
-            parse_mode="HTML"
-        )
+        await query.edit_message_text(text, reply_markup=get_keyboard(chat_id), parse_mode="HTML")
     except telegram.error.RetryAfter as e:
         await asyncio.sleep(e.retry_after)
-        await query.edit_message_text(
-            text,
-            reply_markup=get_keyboard(chat_id),
-            parse_mode="HTML"
-        )
+        await query.edit_message_text(text, reply_markup=get_keyboard(chat_id), parse_mode="HTML")
     except Exception:
         pass
 
