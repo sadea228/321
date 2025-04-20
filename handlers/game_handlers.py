@@ -200,6 +200,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                     await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
                 except telegram.error.RetryAfter as e:
                     await asyncio.sleep(e.retry_after)
+                    await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(animated_keyboard))
                 except Exception:
                     pass
                 await asyncio.sleep(0.1)
@@ -280,11 +281,21 @@ async def _restore_game_message(query: telegram.CallbackQuery, context: ContextT
         "────────────────\n"
         f"➡️ <b>Ходит: {current_emoji}</b>"
     )
-    await query.edit_message_text(
-        text,
-        reply_markup=get_keyboard(chat_id),
-        parse_mode="HTML"
-    )
+    try:
+        await query.edit_message_text(
+            text,
+            reply_markup=get_keyboard(chat_id),
+            parse_mode="HTML"
+        )
+    except telegram.error.RetryAfter as e:
+        await asyncio.sleep(e.retry_after)
+        await query.edit_message_text(
+            text,
+            reply_markup=get_keyboard(chat_id),
+            parse_mode="HTML"
+        )
+    except Exception:
+        pass
 
 # Handler objects
 start_handler = CommandHandler("start", start)
