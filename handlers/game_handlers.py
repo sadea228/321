@@ -15,7 +15,7 @@ from config import logger, GAME_TIMEOUT_SECONDS, THEMES, DEFAULT_THEME_KEY
 from game_state import games, banned_users, chat_stats
 from game_logic import get_symbol_emoji, get_keyboard, check_winner
 from handlers.ai_handlers import ai_move
-from vip import get_avatar, get_signature
+from vip import get_avatar, get_signature, DEFAULT_AVATAR
 from bot_state import add_chat
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -262,22 +262,22 @@ async def game_timeout(context: ContextTypes.DEFAULT_TYPE) -> None:
 async def _restore_game_message(query: telegram.CallbackQuery, context: ContextTypes.DEFAULT_TYPE, chat_id: int, theme_changed: bool) -> None:
     """Восстанавливает сообщение об игре при смене темы или ходе."""
     game_data = games[chat_id]
-    # Информация об игроках
-    x_id = game_data['players'].get('X')
-    o_id = game_data['players'].get('O')
-    x_name = game_data['usernames'].get(x_id, '—') if x_id else '—'
-    o_name = game_data['usernames'].get(o_id, '—') if o_id else '—'
+    # Формируем список игроков с их VIP-аватарами
+    players = game_data['players']
     emojis = game_data['theme_emojis']
-    x_emoji = get_symbol_emoji('X', emojis)
-    o_emoji = get_symbol_emoji('O', emojis)
+    lines = []
+    for symbol, uid in players.items():
+        avatar = get_avatar(uid) if uid else DEFAULT_AVATAR
+        name = game_data['usernames'].get(uid, '—') if uid else '—'
+        sym_emoji = get_symbol_emoji(symbol, emojis)
+        lines.append(f"👤 {avatar} {sym_emoji}: <i>{escape_markdown(name, version=1)}</i>")
     current = game_data['current_player']
     current_emoji = get_symbol_emoji(current, emojis)
     title = "🎨 Тема изменена! 🎨\n\n" if theme_changed else ""
     text = (
         f"{title}<b>🔄 ИГРА В ПРОЦЕССЕ</b> 🔄\n"
         "────────────────\n"
-        f"👤 {x_emoji}: <i>{escape_markdown(x_name, version=1)}</i>\n"
-        f"👤 {o_emoji}: <i>{escape_markdown(o_name, version=1)}</i>\n"
+        f"{"\n".join(lines)}\n"
         "────────────────\n"
         f"➡️ <b>Ходит: {current_emoji}</b>"
     )
