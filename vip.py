@@ -64,6 +64,52 @@ def add_vip(user_id: int, username: str = None) -> None:
     save_vip_data()
 
 
+def remove_vip(user_id: int, username: str = None) -> bool:
+    """Удаляет VIP-статус у пользователя
+    
+    Args:
+        user_id: ID пользователя
+        username: Юзернейм пользователя (опционально)
+    
+    Returns:
+        bool: True если пользователь был в VIP и успешно удален, False если его не было в VIP
+    """
+    was_vip = False
+    
+    # Удаляем из списка VIP-пользователей по ID
+    if user_id in vip_users:
+        vip_users.remove(user_id)
+        was_vip = True
+        
+        # Очищаем связанные данные
+        if user_id in subscriptions:
+            del subscriptions[user_id]
+        if user_id in avatars:
+            del avatars[user_id]
+        if user_id in signatures:
+            del signatures[user_id]
+        if user_id in custom_symbols:
+            del custom_symbols[user_id]
+            
+        # Удаляем из маппинга и username только если совпадает с переданным
+        if user_id in vip_user_map:
+            stored_username = vip_user_map[user_id]
+            if stored_username in vip_usernames:
+                vip_usernames.remove(stored_username)
+            del vip_user_map[user_id]
+    
+    # Если передан username и он есть в списке VIP-юзернеймов
+    if username and username in vip_usernames:
+        vip_usernames.remove(username)
+        was_vip = True
+    
+    # Сохраняем изменения если были изменения
+    if was_vip:
+        save_vip_data()
+    
+    return was_vip
+
+
 def set_avatar(user_id: int, emoji: str) -> None:
     avatars[user_id] = emoji
     save_vip_data()

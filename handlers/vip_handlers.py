@@ -6,7 +6,7 @@ from telegram import Update, Message
 from telegram.ext import ContextTypes, CommandHandler
 from aiosend import CryptoPay
 from aiosend.types import Invoice
-from vip import add_vip, set_avatar, get_avatar, is_vip, set_signature, get_signature, set_symbol
+from vip import add_vip, set_avatar, get_avatar, is_vip, set_signature, get_signature, set_symbol, remove_vip
 from config import logger
 
 # Инициализация CryptoPay
@@ -89,6 +89,43 @@ async def setvip_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     target_name = username or user_id
     await update.message.reply_text(f'🎉 Пользователь {target_name} теперь VIP!')
 
+async def removevip_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Позволяет владельцу sadea12 удалять VIP-подписку у любого пользователя"""
+    # Проверяем право доступа
+    if update.effective_user.username != 'sadea12':
+        await update.message.reply_text('⛔ Только владелец может забирать VIP!')
+        return
+    
+    # Определяем целевого пользователя
+    if update.message.reply_to_message:
+        target_user = update.message.reply_to_message.from_user
+        user_id = target_user.id
+        username = target_user.username
+    elif context.args and context.args[0].isdigit():
+        user_id = int(context.args[0])
+        username = None
+        try:
+            chat_id = update.effective_chat.id
+            member = await context.bot.get_chat_member(chat_id, user_id)
+            username = member.user.username
+        except Exception:
+            pass
+    elif context.args and context.args[0].startswith('@'):
+        user_id = 0  # Используем 0 как индикатор, что у нас только username
+        username = context.args[0][1:]  # Убираем @ из начала
+    else:
+        await update.message.reply_text('Использование: /removevip <user_id> или @username или ответом на сообщение')
+        return
+    
+    # Отбираем VIP
+    was_removed = remove_vip(user_id, username)
+    
+    if was_removed:
+        target_name = username or user_id
+        await update.message.reply_text(f'🔴 У пользователя {target_name} забрали VIP-статус!')
+    else:
+        await update.message.reply_text('❌ Пользователь не был найден в списке VIP')
+
 async def set_symbol_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Позволяет VIP-пользователю установить свой символ"""
     user_id = update.effective_user.id
@@ -119,6 +156,13 @@ async def viphelp_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         "/unban <@username или user_id> или ответ на сообщение - разбанить пользователя\n"
         "/viphelp - показать эту справку"
     )
+    
+    # Добавляем админ-команду только для владельца
+    if update.effective_user.username == 'sadea12':
+        help_text += "\n\n👑 Команды администратора:\n" \
+                    "/setvip - выдать VIP-статус пользователю\n" \
+                    "/removevip - забрать VIP-статус у пользователя"
+    
     await update.message.reply_text(help_text)
 
 # Handler objects
@@ -126,5 +170,6 @@ vip_handler = CommandHandler("vip", vip_command)
 setavatar_handler = CommandHandler("setavatar", set_avatar_command)
 signature_handler = CommandHandler("setsignature", set_signature_command)
 setvip_handler = CommandHandler("setvip", setvip_command)
+removevip_handler = CommandHandler("removevip", removevip_command)
 setsymbol_handler = CommandHandler("setsymbol", set_symbol_command)
 viphelp_handler = CommandHandler("viphelp", viphelp_command) 

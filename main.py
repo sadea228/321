@@ -48,6 +48,7 @@ async def main() -> None:
     app.add_handler(vip_handlers.setavatar_handler)
     app.add_handler(vip_handlers.signature_handler)
     app.add_handler(vip_handlers.setvip_handler)
+    app.add_handler(vip_handlers.removevip_handler)
     app.add_handler(vip_handlers.setsymbol_handler)
     app.add_handler(vip_handlers.viphelp_handler)
     app.add_handler(admin_panel_handlers.admin_panel_handler)
@@ -70,6 +71,7 @@ async def main() -> None:
         BotCommand("setsymbol", "🎭 Установить символ VIP"),
         BotCommand("viphelp", "💡 Список команд VIP"),
         BotCommand("setvip", "👑 Выдать VIP-подписку"),
+        BotCommand("removevip", "🔴 Забрать VIP-подписку"),
         BotCommand("admin", "👑 Открыть админ‑панель"),
     ]
     await app.initialize()

@@ -40,6 +40,7 @@
 - `/reset` - Сбросить игру в чате
 - `/admin` - Открыть административную панель
 - `/setvip` - Выдать VIP-статус пользователю
+- `/removevip` - Забрать VIP-статус у пользователя
 
 ## Требования к системе
 
@@ -221,7 +222,7 @@ crack-nolik-bot/
   from sqlalchemy import create_engine
   DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data.db")
   engine = create_engine(DATABASE_URL)
-  ```
+  ``` 
 
 ## Устранение неполадок
 
