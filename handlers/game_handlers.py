@@ -8,7 +8,7 @@ from datetime import timedelta
 import telegram
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
-from telegram.helpers import escape_markdown
+from telegram.helpers import escape_html, escape_markdown
 from typing import Optional, List, Tuple
 
 from config import logger, GAME_TIMEOUT_SECONDS, THEMES, DEFAULT_THEME_KEY
@@ -88,15 +88,15 @@ async def new_game(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     games[chat_id] = game_data
 
     # Отправка начального сообщения
-    avatar = get_avatar(user_id)
-    signature = get_signature(user_id)
+    avatar = escape_html(get_avatar(user_id))
+    signature = escape_html(get_signature(user_id))
     signature_block = f"{signature}\n" if signature else ""
-    first_emoji = get_symbol_emoji(first_player, game_data['theme_emojis'])
+    first_emoji = escape_html(get_symbol_emoji(first_player, game_data['theme_emojis']))
     sent_message = await message.reply_text(
         "<b>🕹️ НОВАЯ ИГРА НАЧАЛАСЬ! 🕹️</b>\n"
         f"{signature_block}"
         "───────────────\n"
-        f"👤 Игрок: {avatar} <i>{escape_markdown(username, version=1)}</i>\n"
+        f"👤 Игрок: {avatar} <i>{escape_html(username)}</i>\n"
         f"🎭 Символ: {first_emoji}\n"
         f"⏱️ Таймаут на ход: {GAME_TIMEOUT_SECONDS} сек\n"
         "───────────────\n"
@@ -276,12 +276,12 @@ async def _restore_game_message(query: telegram.CallbackQuery, context: ContextT
     # Динамическое отображение игроков с VIP-аватарами в порядке подключения
     lines: List[str] = []
     for uid, sym in game_data['user_symbols'].items():
-        avatar = get_avatar(uid)
-        name = game_data['usernames'].get(uid, str(uid))
-        sym_emoji = get_symbol_emoji(sym, emojis)
-        lines.append(f"👤 {avatar} {sym_emoji}: <i>{escape_markdown(name, version=1)}</i>")
+        avatar = escape_html(get_avatar(uid))
+        name = escape_html(game_data['usernames'].get(uid, str(uid)))
+        sym_emoji = escape_html(get_symbol_emoji(sym, emojis))
+        lines.append(f"👤 {avatar} {sym_emoji}: <i>{name}</i>")
     current = game_data['current_player']
-    current_emoji = get_symbol_emoji(current, emojis)
+    current_emoji = escape_html(get_symbol_emoji(current, emojis))
     text = (
         f"{title}<b>🔄 ИГРА В ПРОЦЕССЕ</b> 🔄\n"
         "────────────────\n"
