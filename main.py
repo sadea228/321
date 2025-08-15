@@ -1,12 +1,8 @@
 import asyncio
-import uvicorn
-from fastapi import FastAPI, Request, Response
-from http import HTTPStatus
-
 from telegram import Update, BotCommand
 from telegram.ext import Application, JobQueue, ContextTypes
 
-from config import TOKEN, WEBHOOK_ENDPOINT_URL, WEBHOOK_PATH, PORT, logger
+from config import TOKEN, logger
 import handlers.game_handlers as game_handlers
 import handlers.theme_handlers as theme_handlers
 import handlers.admin_handlers as admin_handlers
@@ -14,18 +10,12 @@ import handlers.admin_panel_handlers as admin_panel_handlers
 import handlers.ai_handlers as ai_handlers
 import handlers.vip_handlers as vip_handlers
 
-fastapi_app = FastAPI()
-
-async def handle_telegram_update(request: Request, application: Application):
-    body = await request.json()
-    update = Update.de_json(body, application.bot)
-    await application.process_update(update)
-    return Response(status_code=HTTPStatus.OK)
 
 async def main() -> None:
     if not TOKEN:
         logger.critical("TOKEN не задан")
         return
+
     job_queue = JobQueue()
     app = Application.builder().token(TOKEN).job_queue(job_queue).build()
 
@@ -74,35 +64,29 @@ async def main() -> None:
         BotCommand("removevip", "🔴 Забрать VIP-подписку"),
         BotCommand("admin", "👑 Открыть админ‑панель"),
     ]
+
     await app.initialize()
     await app.bot.set_my_commands(commands)
+    await app.bot.delete_webhook(drop_pending_updates=True)
 
-    # Вебхук
-    if WEBHOOK_ENDPOINT_URL:
-        await app.bot.set_webhook(url=WEBHOOK_ENDPOINT_URL, allowed_updates=Update.ALL_TYPES)
-        async def webhook(request: Request):
-            return await handle_telegram_update(request, app)
-        fastapi_app.add_api_route(WEBHOOK_PATH, webhook, methods=["POST"])
-
-    # Глобальный обработчик ошибок для логирования и уведомления пользователя
+    # Глобальный обработчик ошибок
     async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.exception("Произошла ошибка при обработке обновления", exc_info=context.error)
         if isinstance(update, Update) and update.effective_message:
             try:
-                await update.effective_message.reply_text("❗️ Произошла внутренняя ошибка. Пожалуйста, попробуйте позже.")
+                await update.effective_message.reply_text(
+                    "❗️ Произошла внутренняя ошибка. Пожалуйста, попробуйте позже."
+                )
             except Exception:
                 pass
+
     app.add_error_handler(error_handler)
 
-    # Запуск сервера
-    config = uvicorn.Config(app=fastapi_app, host="0.0.0.0", port=PORT)
-    server = uvicorn.Server(config)
-    await app.start()
-    await server.serve()
-    await app.stop()
-    
+    await app.run_polling(allowed_updates=Update.ALL_TYPES)
+
+
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("Остановлено вручную") 
+        logger.info("Остановлено вручную")
